@@ -19,10 +19,12 @@ const ISR_MENSUAL_2026 = [
   [425642.00, Infinity, 133488.54, 35.00]
 ];
 
-const $ = (id) => document.getElementById(id);
+const $ = (id) => typeof document === "undefined" ? null : document.getElementById(id);
 const mx = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
 const money = (value) => mx.format(Number.isFinite(value) ? value : 0);
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const round2 = (value) => Math.round((value + Number.EPSILON) * 100) / 100;
+const ceil2 = (value) => Math.ceil((value - Number.EPSILON) * 100) / 100;
 
 function num(id, fallback = 0) {
   const el = $(id);
@@ -33,15 +35,16 @@ function num(id, fallback = 0) {
 
 function isrMensual(ingreso) {
   if (!Number.isFinite(ingreso) || ingreso <= 0) return 0;
-  const tramo = ISR_MENSUAL_2026.find((r) => ingreso >= r[0] && ingreso <= r[1]) || ISR_MENSUAL_2026.at(-1);
-  return tramo[2] + (ingreso - tramo[0]) * (tramo[3] / 100);
+  const tramo = ISR_MENSUAL_2026.find((r) => ingreso >= r[0] && ingreso <= r[1]) || ISR_MENSUAL_2026[ISR_MENSUAL_2026.length - 1];
+  return round2(tramo[2] + (ingreso - tramo[0]) * (tramo[3] / 100));
 }
 
 function subsidioDisponible(ingreso, periodo) {
-  if (ingreso <= 0 || ingreso > SUBSIDIO_LIMITE) return 0;
-  return periodo === "enero"
+  if (!Number.isFinite(ingreso) || ingreso <= 0 || ingreso > SUBSIDIO_LIMITE) return 0;
+  const importe = periodo === "enero"
     ? UMA_MENSUAL_2025 * 0.1559
     : UMA_MENSUAL * 0.1502;
+  return round2(importe);
 }
 
 function diasVacaciones(anioServicio) {
@@ -63,24 +66,27 @@ function factorIntegracion(aniosCumplidos, diasAguinaldo = 15, primaVacacional =
 }
 
 function imssObrero(sueldoMensual, aniosCumplidos) {
-  if (sueldoMensual <= 0) return { cuota: 0, sdi: 0, factor: factorIntegracion(aniosCumplidos) };
+  if (!Number.isFinite(sueldoMensual) || sueldoMensual <= 0) {
+    return { cuota: 0, sdi: 0, factor: factorIntegracion(aniosCumplidos) };
+  }
   const salarioDiario = sueldoMensual / 30;
   const factor = factorIntegracion(aniosCumplidos);
   const sdi = Math.min(salarioDiario * factor, 25 * UMA);
   const baseMensual = sdi * 30.4;
   let cuota = baseMensual * 0.02375;
   if (sdi > 3 * UMA) cuota += (sdi - 3 * UMA) * 30.4 * 0.004;
-  return { cuota, sdi, factor };
+  return { cuota: round2(cuota), sdi, factor };
 }
 
 function netoDesdeBruto(bruto, periodo, aniosCumplidos) {
-  const isrCausado = isrMensual(bruto);
-  const subsidio = subsidioDisponible(bruto, periodo);
-  const subsidioAplicado = Math.min(isrCausado, subsidio);
-  const isrRetenido = Math.max(0, isrCausado - subsidioAplicado);
-  const imss = imssObrero(bruto, aniosCumplidos);
+  const base = Math.max(0, Number(bruto) || 0);
+  const isrCausado = isrMensual(base);
+  const subsidio = subsidioDisponible(base, periodo);
+  const subsidioAplicado = round2(Math.min(isrCausado, subsidio));
+  const isrRetenido = round2(Math.max(0, isrCausado - subsidioAplicado));
+  const imss = imssObrero(base, aniosCumplidos);
   return {
-    bruto,
+    bruto: round2(base),
     isrCausado,
     subsidio,
     subsidioAplicado,
@@ -88,8 +94,43 @@ function netoDesdeBruto(bruto, periodo, aniosCumplidos) {
     imss: imss.cuota,
     sdi: imss.sdi,
     factor: imss.factor,
-    neto: Math.max(0, bruto - isrRetenido - imss.cuota)
+    neto: round2(Math.max(0, base - isrRetenido - imss.cuota))
   };
+}
+
+function buscarBrutoEnTramo(objetivo, lo, hi, periodo, aniosCumplidos) {
+  const netLo = netoDesdeBruto(lo, periodo, aniosCumplidos).neto;
+  const netHi = netoDesdeBruto(hi, periodo, aniosCumplidos).neto;
+  if (netLo >= objetivo) return ceil2(lo);
+  if (netHi < objetivo) return null;
+  let a = lo;
+  let b = hi;
+  for (let i = 0; i < 90; i++) {
+    const mid = (a + b) / 2;
+    if (netoDesdeBruto(mid, periodo, aniosCumplidos).neto < objetivo) a = mid;
+    else b = mid;
+  }
+  let bruto = ceil2(b);
+  for (let i = 0; i < 5 && netoDesdeBruto(bruto, periodo, aniosCumplidos).neto < objetivo; i++) bruto = round2(bruto + 0.01);
+  return bruto;
+}
+
+function brutoParaNeto(objetivo, periodo, aniosCumplidos) {
+  const netoObjetivo = Math.max(0, Number(objetivo) || 0);
+  if (netoObjetivo === 0) return 0;
+
+  const candidatos = [];
+  const antesDelCorte = buscarBrutoEnTramo(netoObjetivo, 0, SUBSIDIO_LIMITE, periodo, aniosCumplidos);
+  if (antesDelCorte !== null) candidatos.push(antesDelCorte);
+
+  const inicioSinSubsidio = round2(SUBSIDIO_LIMITE + 0.01);
+  let hi = Math.max(inicioSinSubsidio + 1000, netoObjetivo * 1.7 + 5000);
+  while (netoDesdeBruto(hi, periodo, aniosCumplidos).neto < netoObjetivo && hi < 100000000) hi *= 1.5;
+  const despuesDelCorte = buscarBrutoEnTramo(netoObjetivo, inicioSinSubsidio, hi, periodo, aniosCumplidos);
+  if (despuesDelCorte !== null) candidatos.push(despuesDelCorte);
+
+  if (!candidatos.length) return ceil2(hi);
+  return Math.min(...candidatos);
 }
 
 function rows(items) {
@@ -103,22 +144,12 @@ function sueldo() {
   const periodo = $("s_periodo").value;
   const anios = num("s_ant");
   const valor = num("s_monto");
-  let bruto = valor;
+  const label = $("s_monto_label");
+  if (label) label.textContent = modo === "bn" ? "Sueldo mensual bruto (MXN)" : "Sueldo neto mensual deseado (MXN)";
 
-  if (modo === "nb" && valor > 0) {
-    let lo = valor;
-    let hi = Math.max(valor * 1.6, valor + 5000);
-    while (netoDesdeBruto(hi, periodo, anios).neto < valor && hi < 10000000) hi *= 1.5;
-    for (let i = 0; i < 80; i++) {
-      const mid = (lo + hi) / 2;
-      if (netoDesdeBruto(mid, periodo, anios).neto < valor) lo = mid;
-      else hi = mid;
-    }
-    bruto = (lo + hi) / 2;
-  }
-
+  const bruto = modo === "nb" ? brutoParaNeto(valor, periodo, anios) : valor;
   const r = netoDesdeBruto(bruto, periodo, anios);
-  const title = modo === "bn" ? "Sueldo neto mensual estimado" : "Sueldo bruto mensual estimado";
+  const title = modo === "bn" ? "Sueldo neto mensual estimado" : "Sueldo bruto mensual mínimo estimado";
   const big = modo === "bn" ? r.neto : r.bruto;
 
   $("s_res").innerHTML =
@@ -131,7 +162,7 @@ function sueldo() {
       ["IMSS obrero estimado", `−${money(r.imss)}`],
       ["Sueldo neto", money(r.neto), true]
     ]) +
-    `<p class="result-note">SDI estimado: ${money(r.sdi)} diarios · factor de integración ${r.factor.toFixed(4)}. El subsidio nunca se paga en efectivo si excede el ISR causado.</p>`;
+    `<p class="result-note">SDI estimado: ${money(r.sdi)} diarios · factor de integración ${r.factor.toFixed(4)}. El subsidio solo reduce el ISR hasta cero y puede generar un salto alrededor del límite mensual de ${money(SUBSIDIO_LIMITE)}.</p>`;
 }
 
 function parseDate(id) {
@@ -143,6 +174,10 @@ function parseDate(id) {
 
 function daysInclusive(a, b) {
   return Math.floor((b - a) / 86400000) + 1;
+}
+
+function daysBetween(a, b) {
+  return Math.max(0, Math.floor((b - a) / 86400000));
 }
 
 function addYears(date, years) {
@@ -162,8 +197,8 @@ function daysInYear(year) {
 }
 
 function finiquito() {
-  const sueldo = num("f_sal");
-  const diario = sueldo / 30;
+  const sueldoMensual = num("f_sal");
+  const diario = sueldoMensual / 30;
   const ingreso = parseDate("f_ing");
   const salida = parseDate("f_sali");
   const result = $("f_res");
@@ -180,8 +215,8 @@ function finiquito() {
   const tipo = $("f_tipo").value;
   const area = $("f_area").value;
   const incluir20 = Boolean($("f_20")?.checked);
-  const agDias = clamp(num("f_ag", 15), 1, 365);
-  const primaPct = clamp(num("f_pv", 25), 0, 100);
+  const agDias = clamp(num("f_ag", 15), 15, 365);
+  const primaPct = clamp(num("f_pv", 25), 25, 100);
   const pendientes = diario * num("f_pen");
   const totalDias = daysInclusive(ingreso, salida);
   const aniosFraccion = totalDias / 365.2425;
@@ -194,11 +229,13 @@ function finiquito() {
 
   const aniversario = addYears(ingreso, aniosCumplidos);
   const siguienteAniversario = addYears(aniversario, 1);
-  const diasPeriodoServicio = Math.max(0, daysInclusive(aniversario, salida));
-  const duracionPeriodo = Math.max(1, Math.round((siguienteAniversario - aniversario) / 86400000));
+  const diasPeriodoServicio = aniosCumplidos === 0 ? daysInclusive(ingreso, salida) : daysBetween(aniversario, salida);
+  const duracionPeriodo = Math.max(1, daysBetween(aniversario, siguienteAniversario));
   const vacAnuales = diasVacaciones(aniosCumplidos + 1);
   const vacDevengadas = vacAnuales * diasPeriodoServicio / duracionPeriodo;
-  const vacPendientesDias = Math.max(0, vacDevengadas - num("f_vd"));
+  const vacActualesPendientes = Math.max(0, vacDevengadas - num("f_vd"));
+  const vacAnterioresPendientes = num("f_vp");
+  const vacPendientesDias = vacActualesPendientes + vacAnterioresPendientes;
   const vacaciones = vacPendientesDias * diario;
   const primaVacacional = vacaciones * (primaPct / 100);
 
@@ -234,34 +271,35 @@ function finiquito() {
     detalle.push(["Prima de antigüedad", money(primaAntiguedad)]);
   }
 
+  total = round2(total);
   detalle.push([tipo === "d" ? "Total finiquito + indemnización" : "Total finiquito", money(total), true]);
 
   result.innerHTML =
     `<div class="result-kicker">Total estimado bruto</div><div class="big">${money(total)}</div>` +
     rows(detalle) +
-    `<p class="result-note">Antigüedad aproximada: ${aniosFraccion.toFixed(2)} años · salario diario integrado estimado: ${money(salarioIntegrado)}. Los 20 días por año no son automáticos en todo despido; activa esa opción solo cuando corresponda.</p>`;
+    `<p class="result-note">Antigüedad aproximada: ${aniosFraccion.toFixed(2)} años · salario diario integrado estimado: ${money(salarioIntegrado)}. Se supone que las vacaciones de periodos anteriores ya fueron disfrutadas, salvo los días que captures expresamente.</p>`;
 }
 
 function aguinaldo() {
-  const sueldo = num("a_sal");
-  const diario = sueldo / 30;
+  const sueldoMensual = num("a_sal");
+  const diario = sueldoMensual / 30;
   const dias = clamp(num("a_dias"), 0, 365);
   const trabajados = clamp(num("a_trab"), 0, 365);
-  const bruto = diario * dias * trabajados / 365;
-  const exento = Math.min(bruto, 30 * UMA);
-  const gravado = Math.max(0, bruto - exento);
+  const bruto = round2(diario * dias * trabajados / 365);
+  const exento = round2(Math.min(bruto, 30 * UMA));
+  const gravado = round2(Math.max(0, bruto - exento));
   let isr = 0;
 
-  if (gravado > 0 && sueldo > 0) {
+  if (gravado > 0 && sueldoMensual > 0) {
     const promedioMensual = gravado / 365 * 30.4;
     if (promedioMensual > 0) {
-      const diferencia = Math.max(0, isrMensual(sueldo + promedioMensual) - isrMensual(sueldo));
+      const diferencia = Math.max(0, isrMensual(sueldoMensual + promedioMensual) - isrMensual(sueldoMensual));
       const tasa = diferencia / promedioMensual;
-      isr = Math.min(gravado, Math.max(0, tasa * gravado));
+      isr = round2(Math.min(gravado, Math.max(0, tasa * gravado)));
     }
   }
 
-  const neto = Math.max(0, bruto - isr);
+  const neto = round2(Math.max(0, bruto - isr));
   $("a_res").innerHTML =
     `<div class="result-kicker">Aguinaldo neto estimado</div><div class="big">${money(neto)}</div>` +
     rows([
@@ -271,7 +309,7 @@ function aguinaldo() {
       ["ISR estimado", `−${money(isr)}`],
       ["Aguinaldo neto", money(neto), true]
     ]) +
-    `<p class="result-note">La retención se estima con el procedimiento especial del Reglamento de la Ley del ISR; la nómina real puede variar.</p>`;
+    `<p class="result-note">La retención se estima con el procedimiento opcional del artículo 174 del Reglamento de la Ley del ISR; la nómina real puede variar.</p>`;
 }
 
 function run() {
@@ -280,16 +318,69 @@ function run() {
   if ($("a_res")) aguinaldo();
 }
 
-document.addEventListener("input", run);
-document.addEventListener("change", run);
-
-(function init() {
-  if ($("f_sali") && !$("f_sali").value) {
-    const today = new Date();
-    const year = today.getFullYear() === 2026 ? 2026 : 2026;
-    const month = today.getFullYear() === 2026 ? today.getMonth() + 1 : 12;
-    const day = today.getFullYear() === 2026 ? today.getDate() : 31;
-    $("f_sali").value = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+async function copyResult(button) {
+  const id = button.getAttribute("data-copy-result");
+  const target = $(id);
+  if (!target) return;
+  const text = target.innerText.trim();
+  const original = button.textContent;
+  try {
+    if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+    else {
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.setAttribute("readonly", "");
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+    }
+    button.textContent = "Copiado ✓";
+  } catch (_) {
+    button.textContent = "No se pudo copiar";
   }
-  run();
-})();
+  window.setTimeout(() => { button.textContent = original; }, 1600);
+}
+
+const CMX_CORE = {
+  UMA,
+  UMA_MENSUAL,
+  UMA_MENSUAL_2025,
+  SUBSIDIO_LIMITE,
+  SALARIO_MINIMO,
+  ISR_MENSUAL_2026,
+  round2,
+  isrMensual,
+  subsidioDisponible,
+  diasVacaciones,
+  factorIntegracion,
+  imssObrero,
+  netoDesdeBruto,
+  brutoParaNeto
+};
+
+if (typeof module !== "undefined" && module.exports) module.exports = CMX_CORE;
+if (typeof globalThis !== "undefined") globalThis.CMX_CORE = CMX_CORE;
+
+if (typeof document !== "undefined") {
+  document.addEventListener("input", run);
+  document.addEventListener("change", run);
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest?.("[data-copy-result]");
+    if (button) copyResult(button);
+  });
+
+  (function init() {
+    if ($("f_sali") && !$("f_sali").value) {
+      const today = new Date();
+      const useToday = today.getFullYear() === 2026;
+      const year = 2026;
+      const month = useToday ? today.getMonth() + 1 : 12;
+      const day = useToday ? today.getDate() : 31;
+      $("f_sali").value = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+    run();
+  })();
+}
