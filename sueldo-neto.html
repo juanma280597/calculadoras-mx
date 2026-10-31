@@ -4,51 +4,49 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Calculadora de sueldo neto y bruto México 2026</title>
-<meta name="description" content="Calcula sueldo neto o bruto en México con la tarifa ISR 2026, subsidio al empleo e IMSS estimado.">
+<meta name="description" content="Calcula sueldo neto o bruto mensual en México con ISR 2026, subsidio al empleo e IMSS obrero estimado.">
 <meta name="robots" content="index,follow">
 <meta name="theme-color" content="#087a4b">
 <link rel="canonical" href="https://juanma280597.github.io/calculadoras-mx/sueldo-neto.html">
-<meta property="og:type" content="website">
-<meta property="og:locale" content="es_MX">
-<meta property="og:title" content="Calculadora de sueldo neto y bruto México 2026">
-<meta property="og:description" content="Calcula sueldo neto o bruto en México con la tarifa ISR 2026, subsidio al empleo e IMSS estimado.">
-<meta property="og:url" content="https://juanma280597.github.io/calculadoras-mx/sueldo-neto.html">
-<meta name="google-adsense-account" content="ca-pub-4992310094976917">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<meta property="og:type" content="website"><meta property="og:locale" content="es_MX"><meta property="og:site_name" content="Calculadoras MX">
+<meta property="og:title" content="Calculadora de sueldo neto y bruto México 2026"><meta property="og:description" content="ISR 2026, subsidio al empleo e IMSS obrero estimado."><meta property="og:url" content="https://juanma280597.github.io/calculadoras-mx/sueldo-neto.html">
+<meta name="twitter:card" content="summary"><meta name="google-adsense-account" content="ca-pub-4992310094976917">
 <link rel="stylesheet" href="style.css">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4992310094976917" crossorigin="anonymous"></script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"WebApplication","name":"Calculadora de sueldo neto y bruto México 2026","url":"https://juanma280597.github.io/calculadoras-mx/sueldo-neto.html","applicationCategory":"FinanceApplication","operatingSystem":"Web","inLanguage":"es-MX","offers":{"@type":"Offer","price":"0","priceCurrency":"MXN"}}
+</script>
 </head>
 <body>
 <div class="shell">
-<header class="site-header">
-  <a class="brand" href="index.html" aria-label="Calculadoras MX, inicio"><span class="brand-mark">CMX</span><span>Calculadoras MX<small>Laborales · México</small></span></a>
-  <span class="badge">Datos oficiales · 2026</span>
-</header>
+<header class="site-header"><a class="brand" href="index.html" aria-label="Calculadoras MX, inicio"><span class="brand-mark" aria-hidden="true">CMX</span><span>Calculadoras MX<small>Laborales · México</small></span></a><span class="badge">Parámetros 2026</span></header>
 <main>
-  <section class="hero compact">
-    <p class="eyebrow">Nómina 2026</p>
-    <h1>Sueldo neto y bruto</h1>
-    <p class="lead">Convierte tu sueldo mensual bruto a neto —o al revés— con ISR, subsidio al empleo e IMSS obrero estimado.</p>
-  </section>
+  <section class="hero compact"><p class="eyebrow">Nómina mensual · 2026</p><h1>Sueldo neto y bruto</h1><p class="lead">Convierte tu sueldo mensual bruto a neto —o calcula el bruto mínimo estimado para alcanzar un neto— con desglose de ISR, subsidio e IMSS.</p></section>
   <nav class="nav-pills" aria-label="Calculadoras"><a class="on" href="sueldo-neto.html" aria-current="page">Sueldo</a><a href="finiquito-liquidacion.html">Finiquito</a><a href="aguinaldo.html">Aguinaldo</a></nav>
   <section class="calc-card" aria-labelledby="calc-title">
     <div class="calc-head"><div><h2 id="calc-title">Datos para el cálculo</h2><p>Pago mensual · parámetros 2026</p></div><span class="badge">Estimación</span></div>
     <div class="form-grid">
-      <div class="field full"><label for="s_modo">Quiero calcular</label><select id="s_modo"><option value="bn">Mi sueldo neto a partir del bruto</option><option value="nb">El bruto necesario para recibir un neto</option></select></div>
-      <div class="field"><label for="s_monto">Sueldo mensual (MXN)</label><input id="s_monto" type="number" inputmode="decimal" min="0" step="100" value="20000"></div>
-      <div class="field"><label for="s_ant">Años cumplidos en la empresa</label><input id="s_ant" type="number" inputmode="numeric" min="0" max="60" step="1" value="0"><p class="help">Se usa para estimar el factor de integración del IMSS con prestaciones mínimas de ley.</p></div>
+      <div class="field full"><label for="s_modo">Quiero calcular</label><select id="s_modo"><option value="bn">Mi sueldo neto a partir del bruto</option><option value="nb">El bruto mínimo estimado para recibir un neto</option></select></div>
+      <div class="field"><label id="s_monto_label" for="s_monto">Sueldo mensual bruto (MXN)</label><input id="s_monto" type="number" inputmode="decimal" min="0" step="100" value="20000" autocomplete="off"></div>
+      <div class="field"><label for="s_ant">Años cumplidos en la empresa</label><input id="s_ant" type="number" inputmode="numeric" min="0" max="60" step="1" value="0"><p class="help">Ajusta el factor de integración usando vacaciones mínimas de ley.</p></div>
       <div class="field full"><label for="s_periodo">Periodo de subsidio al empleo</label><select id="s_periodo"><option value="feb-dic">Febrero a diciembre de 2026</option><option value="enero">Enero de 2026</option></select></div>
     </div>
-    <div class="res" id="s_res" aria-live="polite"></div>
-    <p class="note">El IMSS se estima con prestaciones mínimas de ley y cuotas obreras comunes. No incluye Infonavit, fondo de ahorro, préstamos, bonos variables ni otras deducciones o prestaciones de tu empresa.</p>
+    <div class="res" id="s_res" aria-live="polite" aria-atomic="true"></div>
+    <div class="action-row"><button class="btn secondary" type="button" data-copy-result="s_res">Copiar resultado</button></div>
+    <p class="note">El IMSS es una estimación con prestaciones mínimas de ley y cuotas obreras comunes. No incluye Infonavit, fondo de ahorro, préstamos, bonos variables ni otras deducciones. Si tu cuota diaria es exactamente el salario mínimo, la Ley del Seguro Social dispone que el patrón cubra íntegramente la cuota obrera; este caso especial no se activa automáticamente.</p>
   </section>
   <section class="content-card">
-    <h2>¿Cómo calculamos el ISR 2026?</h2><p>Usamos directamente la tarifa mensual 2026 del Anexo 8 de la Resolución Miscelánea Fiscal, en lugar de aproximar la tabla de años anteriores con un factor.</p>
-    <h2>¿Cómo funciona el subsidio al empleo?</h2><p>Para ingresos mensuales de hasta $11,492.66 se aplica el subsidio vigente. Si el subsidio es mayor al ISR causado, únicamente reduce el ISR a cero; el excedente no se entrega en efectivo.</p>
-    <h2>Fuentes oficiales</h2><ul class="source-list"><li><a href="https://www.sat.gob.mx/minisitio/NormatividadRMFyRGCE/normatividad_rmf_rgce2026.html" rel="noopener noreferrer">SAT · RMF y Anexo 8 de 2026 ↗</a></li><li><a href="https://www.inegi.org.mx/temas/uma/" rel="noopener noreferrer">INEGI · UMA 2026 ↗</a></li></ul>
+    <p class="updated">Revisado el 31 de octubre de 2026</p>
+    <h2>ISR mensual 2026</h2><p>La herramienta usa directamente la tarifa mensual del Anexo 8 de la RMF 2026. El modo neto→bruto evalúa por separado el tramo con subsidio y el tramo sin subsidio para no fallar en el salto que existe al rebasar el límite mensual.</p>
+    <h2>Subsidio al empleo</h2><p>Se aplica a ingresos mensuales de hasta $11,492.66. Para enero se considera el porcentaje especial sobre la UMA 2025 y para febrero-diciembre el 15.02% de la UMA mensual 2026. El subsidio solo reduce el ISR hasta cero.</p>
+    <h2>Fuentes oficiales</h2><ul class="source-list"><li><a href="https://www.sat.gob.mx/minisitio/NormatividadRMFyRGCE/normatividad_rmf_rgce2026.html" rel="noopener noreferrer">SAT · RMF y Anexo 8 de 2026 ↗</a></li><li><a href="https://www.dof.gob.mx/nota_detalle.php?codigo=5777649&fecha=31/12/2025" rel="noopener noreferrer">DOF · Subsidio al empleo 2026 ↗</a></li><li><a href="https://www.diputados.gob.mx/LeyesBiblio/pdf/LSS.pdf" rel="noopener noreferrer">Ley del Seguro Social ↗</a></li><li><a href="https://www.inegi.org.mx/temas/uma/" rel="noopener noreferrer">INEGI · UMA 2026 ↗</a></li></ul>
   </section>
 </main>
-<footer class="site-footer"><span>Estimaciones informativas; no sustituyen asesoría fiscal, contable o legal.</span><a href="privacidad.html">Aviso de privacidad</a></footer>
+<footer class="site-footer"><span>Estimaciones informativas; no sustituyen asesoría fiscal, contable o legal.</span><span class="footer-links"><a href="privacidad.html">Privacidad</a><a href="index.html">Inicio</a></span></footer>
 </div>
+<noscript><div class="noscript">Esta calculadora necesita JavaScript para funcionar.</div></noscript>
 <script src="calc.js" defer></script>
 </body>
 </html>
