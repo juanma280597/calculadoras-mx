@@ -7,6 +7,9 @@ Sitio estático de calculadoras laborales para México, publicado con GitHub Pag
 - Sueldo neto ↔ bruto mensual (ISR 2026, subsidio al empleo e IMSS obrero estimado).
 - Finiquito y liquidación estimada.
 - Aguinaldo e ISR estimado.
+- Vacaciones y prima vacacional.
+- Horas extra dobles y triples.
+- PTU / reparto individual de utilidades.
 
 ## Principios del producto
 
@@ -26,6 +29,11 @@ npm test
 
 GitHub Actions ejecuta las pruebas automáticamente en cada push y pull request.
 
+## Motores de cálculo
+
+- `calc.js`: sueldo, ISR, subsidio, IMSS estimado, finiquito y aguinaldo.
+- `extras.js`: vacaciones/prima vacacional, horas extra y PTU.
+
 ## Checklist anual de actualización
 
 Antes de cambiar el año visible del sitio:
@@ -35,6 +43,7 @@ Antes de cambiar el año visible del sitio:
 - Actualizar UMA de INEGI.
 - Actualizar salarios mínimos generales y ZLFN.
 - Revisar reformas vigentes de LFT y LSS.
+- Revisar reglas de PTU, vacaciones y jornada extraordinaria.
 - Actualizar textos, metas SEO, sitemap y fecha de revisión.
 - Ejecutar las pruebas y agregar casos nuevos para cualquier regla modificada.
 
@@ -44,6 +53,9 @@ Antes de cambiar el año visible del sitio:
 - Si el trabajador percibe exactamente el salario mínimo diario, el artículo 36 de la LSS asigna al patrón el pago íntegro de la cuota obrera; el estimador no activa automáticamente ese caso especial.
 - El salario diario integrado de una indemnización puede incluir prestaciones adicionales que el formulario no conoce.
 - Los 20 días por año no proceden automáticamente en cualquier despido.
+- PTU requiere datos globales del proyecto de reparto; la calculadora no determina por sí sola quién tiene derecho o si el patrón está obligado.
+- Horas extra supone salario mensual ordinario convertido a salario diario entre 30 y divide el salario diario entre las horas de la jornada capturada.
+- La calculadora de vacaciones muestra el valor económico del periodo y la prima vacacional; el salario ordinario normalmente continúa pagándose durante el descanso.
 
 ## Fuentes principales
 
