@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://juanma280597.github.io/calculadoras-mx/sitemap.xml
