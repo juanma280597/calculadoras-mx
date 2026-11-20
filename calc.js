@@ -207,11 +207,6 @@ function finiquito() {
     result.innerHTML = `<div class="result-error">Elige fechas válidas de ingreso y salida.</div>`;
     return;
   }
-  if (salida.getUTCFullYear() !== 2026) {
-    result.innerHTML = `<div class="result-error">Esta versión usa parámetros oficiales de 2026; selecciona una fecha de salida de 2026.</div>`;
-    return;
-  }
-
   const tipo = $("f_tipo").value;
   const area = $("f_area").value;
   const incluir20 = Boolean($("f_20")?.checked);
@@ -222,17 +217,23 @@ function finiquito() {
   const aniosFraccion = totalDias / 365.2425;
   const aniosCumplidos = fullYearsBetween(ingreso, salida);
 
-  const inicioAnio = new Date(Date.UTC(2026, 0, 1));
+  const anioSalida = salida.getUTCFullYear();
+  const inicioAnio = new Date(Date.UTC(anioSalida, 0, 1));
   const inicioAguinaldo = ingreso > inicioAnio ? ingreso : inicioAnio;
   const diasAguinaldoTrabajados = Math.max(0, daysInclusive(inicioAguinaldo, salida));
-  const aguinaldo = diario * agDias * diasAguinaldoTrabajados / daysInYear(2026);
+  const aguinaldo = diario * agDias * diasAguinaldoTrabajados / daysInYear(anioSalida);
 
   const aniversario = addYears(ingreso, aniosCumplidos);
   const siguienteAniversario = addYears(aniversario, 1);
   const diasPeriodoServicio = aniosCumplidos === 0 ? daysInclusive(ingreso, salida) : daysBetween(aniversario, salida);
   const duracionPeriodo = Math.max(1, daysBetween(aniversario, siguienteAniversario));
   const vacAnuales = diasVacaciones(aniosCumplidos + 1);
-  const vacDevengadas = vacAnuales * diasPeriodoServicio / duracionPeriodo;
+  // En el aniversario exacto el periodo en curso tiene 0 días, pero el año
+  // que acaba de cumplirse ya devengó sus vacaciones completas.
+  const esAniversarioExacto = aniosCumplidos > 0 && aniversario.getTime() === salida.getTime();
+  const vacDevengadas = esAniversarioExacto
+    ? diasVacaciones(aniosCumplidos)
+    : vacAnuales * diasPeriodoServicio / duracionPeriodo;
   const vacActualesPendientes = Math.max(0, vacDevengadas - num("f_vd"));
   const vacAnterioresPendientes = num("f_vp");
   const vacPendientesDias = vacActualesPendientes + vacAnterioresPendientes;
@@ -375,10 +376,9 @@ if (typeof document !== "undefined") {
   (function init() {
     if ($("f_sali") && !$("f_sali").value) {
       const today = new Date();
-      const useToday = today.getFullYear() === 2026;
-      const year = 2026;
-      const month = useToday ? today.getMonth() + 1 : 12;
-      const day = useToday ? today.getDate() : 31;
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      const day = today.getDate();
       $("f_sali").value = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     }
     run();
